@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace Computationele_Intelligentie_Pi
 {
@@ -7,11 +10,8 @@ namespace Computationele_Intelligentie_Pi
     {
         static void Main(string[] args)
         {
-            Sudoku s = new Sudoku();            
-            s.PrintBoard();
-            //s.HillClimb();
-            s.TrySwap(0, 0, 0, 2);
-            s.PrintBoard();
+            Console.WriteLine("Welcome to a sudokuSolver by: Bram Kreuger (5990653) & Pieter Barkema (...)");
+            Sudoku s = new Sudoku(false);                 
             Console.ReadKey();
         }
     }
@@ -25,11 +25,17 @@ namespace Computationele_Intelligentie_Pi
         Random random;
 
         /// <summary>
-        /// Constructor for the sudoku. The board variable can vary, comment it out to change input.
+        /// Constructor for the sudoku. Use the bool input to override the test sudoku. True = override, False = keep the old one (just for testing)
         /// </summary>
-        public Sudoku()
+        public Sudoku(bool overrideBoard)
         {
-            board = new int[,]
+            if (overrideBoard)
+            {
+                Initialize();
+            }
+            else
+            {
+                board = new int[,]
             {
                 {0,0,0,0,0,0,0,0,0 },
                 {0,0,0,0,0,3,0,8,5 },
@@ -40,7 +46,8 @@ namespace Computationele_Intelligentie_Pi
                 {5,0,0,0,0,0,0,7,3 },
                 {0,0,2,0,1,0,0,0,0 },
                 {0,0,0,0,4,0,0,0,9 }
-            };           
+            };
+            }
 
             n = board.GetLength(0);
 
@@ -50,7 +57,21 @@ namespace Computationele_Intelligentie_Pi
 
             random = new Random();
 
+            PrintBoard(true);
+
             FillBoard();
+
+            PrintBoard(false);
+
+            Console.WriteLine("Press any key to start HillClimbing...");
+
+            Console.ReadKey();
+
+            Console.WriteLine(" ");
+
+            HillClimb();
+
+            PrintBoard(false);
         }
 
         /// <summary>
@@ -118,19 +139,34 @@ namespace Computationele_Intelligentie_Pi
         }
 
         /// <summary>
-        /// Helper method for printing the whole board.
+        /// Helper method for printing the whole board. Choose bool true to print original board (DEBUG ONLY)   
         /// </summary>
-        public void PrintBoard()
+        public void PrintBoard(bool printOriginal)
         {
-            for (int x = 0; x < n; x++)
+            if (printOriginal)
             {
-                for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
                 {
-                    Console.Write(boardExtra[x, y].Item1 + " ");
+                    for (int y = 0; y < n; y++)
+                    {
+                        Console.Write(board[x, y] + " ");
+                    }
+                    Console.WriteLine();
                 }
-                Console.WriteLine();
+                Console.WriteLine("- - - - - - - - -");
             }
-            Console.WriteLine("- - - - - - - - -");
+            else
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    for (int y = 0; y < n; y++)
+                    {
+                        Console.Write(boardExtra[x, y].Item1 + " ");
+                    }
+                    Console.WriteLine();
+                }
+                Console.WriteLine("- - - - - - - - -");
+            }
         }
 
         /// <summary>
@@ -147,13 +183,13 @@ namespace Computationele_Intelligentie_Pi
 
             for (int y = 0; y < n; y++)
             {
-                if(numbers.Contains(boardExtra[rowNumber, y].Item1))
+                if (numbers.Contains(boardExtra[rowNumber, y].Item1))
                 {
                     numbers.Remove(boardExtra[rowNumber, y].Item1);
                 }
             }
 
-            Console.WriteLine("Row " + rowNumber + " evaluated: " + numbers.Count);
+            //Console.WriteLine("Row " + rowNumber + " evaluated: " + numbers.Count);
             return numbers.Count;
         }
 
@@ -177,7 +213,7 @@ namespace Computationele_Intelligentie_Pi
                 }
             }
 
-            Console.WriteLine("column " + columnNumber + " evaluated: " + numbers.Count);
+            //Console.WriteLine("column " + columnNumber + " evaluated: " + numbers.Count);
             return numbers.Count;
         }
 
@@ -188,12 +224,13 @@ namespace Computationele_Intelligentie_Pi
         /// <param name="y1">Y coordinate of the first number.</param>
         /// <param name="x2">X coordinate of the second number.</param>
         /// <param name="y2">Y coordinate of the second number.</param>
-        public void TrySwap(int x1, int y1, int x2, int y2)
+        public Tuple<int, Tuple<int, int>, Tuple<int, int>> TrySwap(int x1, int y1, int x2, int y2)
         {
-            Tuple<int, bool> number1 = boardExtra[y1, x1]; 
-            Tuple<int, bool> number2 = boardExtra[y2, x2];              
+            Tuple<int, bool> number1 = boardExtra[y1, x1];
+            Tuple<int, bool> number2 = boardExtra[y2, x2];
 
-            if (number1.Item2 == false && number2.Item2 == false && (x1 != x2 || y1 !=y2) && (number1.Item1 != number2.Item1)) // If both numbers are not "Fixed", or they are the same number or location
+
+            if (number1.Item2 == false && number2.Item2 == false && (x1 != x2 || y1 != y2) && (number1.Item1 != number2.Item1)) // If both numbers are not "Fixed", or they are the same number or location
             {
                 int eval = 0;
 
@@ -216,12 +253,12 @@ namespace Computationele_Intelligentie_Pi
                     eval -= EvaluateRow(x2);
                 }
 
-                Console.WriteLine("Initial eval: " + eval);
+                //Console.WriteLine("Initial eval: " + eval);
 
                 boardExtra[y1, x1] = number2; //Swap
                 boardExtra[y2, x2] = number1;
-                
-                if(y1 == y2) // If the column is the same
+
+                if (y1 == y2) // If the column is the same
                 {
                     eval += Evaluatecolumn(y1);
                 }
@@ -230,7 +267,7 @@ namespace Computationele_Intelligentie_Pi
                     eval += Evaluatecolumn(y1);
                     eval += Evaluatecolumn(y2);
                 }
-                if(x1 == x2) // If the row is the same
+                if (x1 == x2) // If the row is the same
                 {
                     eval += EvaluateRow(x1);
                 }
@@ -240,41 +277,188 @@ namespace Computationele_Intelligentie_Pi
                     eval += EvaluateRow(x2);
                 }
 
-                Console.WriteLine("Total eval difference: " + eval);
+                //Console.WriteLine("Total eval difference: " + eval);
+
+                boardExtra[y1, x1] = number1; //Swap back
+                boardExtra[y2, x2] = number2;
+
+                return new Tuple<int, Tuple<int, int>, Tuple<int, int>>(eval, new Tuple<int, int>(x1, y1), new Tuple<int, int>(x2, y2));
             }
+
+            return null;
         }
 
+        /// <summary>
+        /// Runs the Hillclimbing algorithm
+        /// </summary>
         public void HillClimb()
         {
-            // Choose a random (Nsqrd x Nsqrd) Square
-            int ranSquare = random.Next(0, n);
-
-            Console.WriteLine("Choosen square: " + ranSquare);
-
-            //Loop through each number in the square
-            for (int x1 = 0; x1 < nSqrd; x1++)
+            //Run the algorithm x times
+            for (int i = 0; i < 30; i++)
             {
-                for (int y1 = 0; y1 < nSqrd; y1++)
+                // Choose a random (Nsqrd x Nsqrd) Square
+                int ranSquareX = random.Next(0, nSqrd);
+                int ranSquareY = random.Next(0, nSqrd);
+
+                // Obscure way to store data: Item1 = evaluationValue, Item2 = <x1, y2>, Item3 = <x2, y2>
+                Tuple<int, Tuple<int, int>, Tuple<int, int>> bestResult = new Tuple<int, Tuple<int, int>, Tuple<int, int>>(0, new Tuple<int, int>(0, 0), new Tuple<int, int>(0, 0));
+                Tuple<int, Tuple<int, int>, Tuple<int, int>> result = new Tuple<int, Tuple<int, int>, Tuple<int, int>>(0, new Tuple<int, int>(0, 0), new Tuple<int, int>(0, 0));
+
+                //Console.WriteLine("Choosen square: " + ranSquareX + " : " + ranSquareY);
+
+                //Loop through each number in the square
+                for (int x1 = 0; x1 < nSqrd; x1++)
                 {
-                    int xCor1 = ranSquare + x1;
-                    int yCor1 = ranSquare + y1;
-
-                    //Do it again
-
-                    for (int x2 = 0; x2 < nSqrd; x2++)
+                    for (int y1 = 0; y1 < nSqrd; y1++)
                     {
-                        for (int y2 = 0; y2 < nSqrd; y2++)
+                        int xCor1 = ranSquareX + x1;
+                        int yCor1 = ranSquareY + y1;
+
+                        //Do it again
+
+                        for (int x2 = 0; x2 < nSqrd; x2++)
                         {
-                            int xCor2 = ranSquare + x2;
-                            int yCor2 = ranSquare + y2;
+                            for (int y2 = 0; y2 < nSqrd; y2++)
+                            {
+                                int xCor2 = ranSquareX + x2;
+                                int yCor2 = ranSquareY + y2;
 
-                            TrySwap(xCor1, yCor1, xCor2, yCor2);                         
+                                result = TrySwap(xCor1, yCor1, xCor2, yCor2);
 
+                                if (result != null)
+                                {
+                                    if (bestResult.Item1 < result.Item1)
+                                    {
+                                        bestResult = result;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+
+                Console.WriteLine("Best swap: " + bestResult.Item2.Item1 + " : " + bestResult.Item2.Item2 + " and " + bestResult.Item3.Item1 + " : " + bestResult.Item3.Item2 + " with score: " + bestResult.Item1);
+
+                var pos1 = bestResult.Item2;
+                var pos2 = bestResult.Item3;
+                var num1 = boardExtra[pos1.Item1, pos1.Item2];
+                var num2 = boardExtra[pos2.Item1, pos2.Item2];
+
+                boardExtra[pos2.Item1, pos2.Item2] = num1; //Swap
+                boardExtra[pos1.Item1, pos1.Item2] = num2;
+
+                int eval = FullEvaluation();
+
+                Console.WriteLine("Iteration: " + i + " eval: " + eval);
             }
         }
-        
+
+        /// <summary>
+        /// Loads the file containing the sudokus and take the one matching the sudokuNumber. Make sure the text file is in:
+        /// \Computationele Intelligentie Pi\Computationele Intelligentie Pi\bin\Debug\netcoreapp2.0
+        /// Or somthing similair.
+        /// </summary>        
+        public void Initialize()
+        {
+            string textFile = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "sudoku_puzzels.txt"));
+
+            //Each "Seperator" is the number of the line where there is text, not numbers, these lines seperate the sudoku's.
+            List<int> seperators = new List<int>();
+
+            using (StringReader reader = new StringReader(textFile))
+            {
+                string line = string.Empty;
+                int counter = 0;
+                do
+                {
+                    line = reader.ReadLine();
+                    if (line != null)
+                    {
+                        if (Regex.IsMatch(line, @"[a-zA-z]"))
+                        {
+                            seperators.Add(counter);
+                        }
+                    }
+
+                    counter++;
+
+                } while (line != null);
+                seperators.Add(counter - 1); //Add last line for processing 
+            }
+            // So now you've got a list of numbers containing the beginnings and ends of the sudoku's and the loaded textfile
+            AskInput(seperators, textFile);
+
+        }
+
+        /// <summary>
+        /// Ask for input from the user. This is an self-contained method so it can be called recursively.
+        /// </summary>
+        public void AskInput(List<int> seperators, string textFile)
+        {            
+            Console.WriteLine("Choose a sudoku-puzzel from: 0 to: " + (seperators.Count - 1) + " . By typing the corrosponding number");
+            string sudokuInput = Console.ReadLine();
+            if (int.TryParse(sudokuInput, out int res))
+            {
+                int sudokuNumber = int.Parse(sudokuInput);
+
+                if (sudokuNumber < seperators.Count && sudokuNumber > -1)
+                {
+                    LoadSudoku(sudokuNumber, seperators, textFile);
+                }
+                else
+                {
+                    Console.WriteLine("Given sudoku-number is out of range.");
+                    AskInput(seperators, textFile);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Please insert a number, not an string...");
+                AskInput(seperators, textFile);
+            }
+        }
+
+        /// <summary>
+        /// Converts textfile to 2D array.
+        /// </summary>
+        public void LoadSudoku(int sudokuNumber, List<int> seperators, string textFile)
+        {
+            List<int[]> charlist = new List<int[]>();
+            int[,] sudoku = null;
+
+            List<string> allLines = (from l in textFile.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                            select l).ToList(); // Splits the lines on the newlines
+
+            int size = seperators[sudokuNumber + 1] - (seperators[sudokuNumber] + 1);
+            sudoku = new int[size, size];
+            for (int i = seperators[sudokuNumber] + 1; i < seperators[sudokuNumber + 1]; i++)
+            {
+                charlist.Add(Array.ConvertAll(allLines[i].ToCharArray(), c => (int)Char.GetNumericValue(c)));
+            }
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    sudoku[y, x] = (charlist[y])[x];
+                }
+            }
+            board = sudoku;
+        }
+
+        public int FullEvaluation()
+        {
+            int eval = 0;//n * n;
+
+            for (int r = 0; r < n; r++)
+            {
+                eval += EvaluateRow(r);
+            }
+            for (int c = 0; c < n; c++)
+            {
+                eval += Evaluatecolumn(c);
+            }
+
+            return eval;
+        }
     }
 }
