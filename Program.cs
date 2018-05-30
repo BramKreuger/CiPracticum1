@@ -16,10 +16,26 @@ namespace Computationele_Intelligentie_Pi
         }
     }
 
+    class Number
+    {
+        public int value;
+        public int x;
+        public int y;
+        public bool anchored;
+
+        public Number(int value, int x, int y, bool anchored)
+        {
+            this.value = value;
+            this.x = x;
+            this.y = y;
+            this.anchored = anchored;
+        }
+    }
+
     class Sudoku
     {
         public int[,] board; //The 2D array representing the board/field with all the numbers
-        public Tuple<int, bool>[,] boardExtra; // The same 2D array, but now with tuples. Int meaning the number, The bool meaning wether the number is fixed = TRUE or not-fixed = FALSE
+        public Number[,] boardExtra; // The same 2D array, but now with tuples. Int meaning the number, The bool meaning wether the number is fixed = TRUE or not-fixed = FALSE
         int n; // The size of the sudoku, we will use: 9, 16 or 25
         int nSqrd; // The square root of n: 3, 4 or 5
         Random random;
@@ -51,23 +67,23 @@ namespace Computationele_Intelligentie_Pi
 
             n = board.GetLength(0);
 
-            boardExtra = new Tuple<int, bool>[n, n];
+            boardExtra = new Number[n, n];
 
             nSqrd = (int)Math.Sqrt(n);
 
             random = new Random();
 
-            PrintBoard(true);
+            //PrintBoard(true);
 
             FillBoard();
 
             PrintBoard(false);
 
-            Console.WriteLine("Press any key to start HillClimbing...");
+            //Console.WriteLine("Press any key to start HillClimbing...");
 
-            Console.ReadKey();
+            //Console.ReadKey();
 
-            Console.WriteLine(" ");
+            //Console.WriteLine(" ");
 
             HillClimb();
 
@@ -125,11 +141,11 @@ namespace Computationele_Intelligentie_Pi
                             {
                                 int number = numStack.Pop();
                                 board[xCor, yCor] = number;
-                                boardExtra[xCor, yCor] = new Tuple<int, bool>(number, false); // Is the number "new"? Than fixed = FALSE
+                                boardExtra[xCor, yCor] = new Number(number, xCor, yCor, false); // Is the number "new"? Than fixed = FALSE
                             }
                             else
                             {
-                                boardExtra[xCor, yCor] = new Tuple<int, bool>(board[xCor, yCor], true); // Is the number "old"? Than fixed = TRUE
+                                boardExtra[xCor, yCor] = new Number(board[xCor, yCor], xCor, yCor, false); // Is the number "old"? Than fixed = TRUE
                             }
 
                         }
@@ -141,6 +157,7 @@ namespace Computationele_Intelligentie_Pi
         /// <summary>
         /// Helper method for printing the whole board. Choose bool true to print original board (DEBUG ONLY)   
         /// </summary>
+        /// /// <param name="printOriginal">Choose True to print original board!</param>
         public void PrintBoard(bool printOriginal)
         {
             if (printOriginal)
@@ -161,7 +178,7 @@ namespace Computationele_Intelligentie_Pi
                 {
                     for (int y = 0; y < n; y++)
                     {
-                        Console.Write(boardExtra[x, y].Item1 + " ");
+                        Console.Write(boardExtra[x, y].value + " ");
                     }
                     Console.WriteLine();
                 }
@@ -183,13 +200,13 @@ namespace Computationele_Intelligentie_Pi
 
             for (int y = 0; y < n; y++)
             {
-                if (numbers.Contains(boardExtra[rowNumber, y].Item1))
+                if (numbers.Contains(boardExtra[rowNumber, y].value))
                 {
-                    numbers.Remove(boardExtra[rowNumber, y].Item1);
+                    numbers.Remove(boardExtra[rowNumber, y].value);
                 }
             }
 
-            //Console.WriteLine("Row " + rowNumber + " evaluated: " + numbers.Count);
+            Console.WriteLine("Row " + rowNumber + " evaluated: " + numbers.Count);
             return numbers.Count;
         }
 
@@ -207,13 +224,13 @@ namespace Computationele_Intelligentie_Pi
 
             for (int x = 0; x < n; x++)
             {
-                if (numbers.Contains(boardExtra[x, columnNumber].Item1))
+                if (numbers.Contains(boardExtra[x, columnNumber].value))
                 {
-                    numbers.Remove(boardExtra[x, columnNumber].Item1);
+                    numbers.Remove(boardExtra[x, columnNumber].value);
                 }
             }
 
-            //Console.WriteLine("column " + columnNumber + " evaluated: " + numbers.Count);
+            Console.WriteLine("column " + columnNumber + " evaluated: " + numbers.Count);
             return numbers.Count;
         }
 
@@ -224,13 +241,13 @@ namespace Computationele_Intelligentie_Pi
         /// <param name="y1">Y coordinate of the first number.</param>
         /// <param name="x2">X coordinate of the second number.</param>
         /// <param name="y2">Y coordinate of the second number.</param>
-        public Tuple<int, Tuple<int, int>, Tuple<int, int>> TrySwap(int x1, int y1, int x2, int y2)
+        public Tuple<int, Number, Number> TrySwap(int x1, int y1, int x2, int y2)
         {
-            Tuple<int, bool> number1 = boardExtra[y1, x1];
-            Tuple<int, bool> number2 = boardExtra[y2, x2];
+            Number number1 = boardExtra[y1, x1];
+            Number number2 = boardExtra[y2, x2];
 
 
-            if (number1.Item2 == false && number2.Item2 == false && (x1 != x2 || y1 != y2) && (number1.Item1 != number2.Item1)) // If both numbers are not "Fixed", or they are the same number or location
+            if (number1.anchored == false && number2.anchored == false && (x1 != x2 || y1 != y2)) // If both numbers are not "Fixed", or they are the same location
             {
                 int eval = 0;
 
@@ -282,7 +299,7 @@ namespace Computationele_Intelligentie_Pi
                 boardExtra[y1, x1] = number1; //Swap back
                 boardExtra[y2, x2] = number2;
 
-                return new Tuple<int, Tuple<int, int>, Tuple<int, int>>(eval, new Tuple<int, int>(x1, y1), new Tuple<int, int>(x2, y2));
+                return new Tuple<int, Number, Number>(eval, number1, number2);
             }
 
             return null;
@@ -293,18 +310,22 @@ namespace Computationele_Intelligentie_Pi
         /// </summary>
         public void HillClimb()
         {
+            Console.WriteLine("Initial evaluation: " + FullEvaluation());
+
             //Run the algorithm x times
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 1; i++)
             {
                 // Choose a random (Nsqrd x Nsqrd) Square
                 int ranSquareX = random.Next(0, nSqrd);
                 int ranSquareY = random.Next(0, nSqrd);
 
                 // Obscure way to store data: Item1 = evaluationValue, Item2 = <x1, y2>, Item3 = <x2, y2>
-                Tuple<int, Tuple<int, int>, Tuple<int, int>> bestResult = new Tuple<int, Tuple<int, int>, Tuple<int, int>>(0, new Tuple<int, int>(0, 0), new Tuple<int, int>(0, 0));
-                Tuple<int, Tuple<int, int>, Tuple<int, int>> result = new Tuple<int, Tuple<int, int>, Tuple<int, int>>(0, new Tuple<int, int>(0, 0), new Tuple<int, int>(0, 0));
+                Tuple<int, Number, Number> bestResult = new Tuple<int, Number, Number>(0, null, null);
+                Tuple<int, Number, Number> result = new Tuple<int, Number, Number>(0, null, null);
+                //Tuple<int, Tuple<int, int>, Tuple<int, int>> bestResult = new Tuple<int, Tuple<int, int>, Tuple<int, int>>(0, new Tuple<int, int>(0, 0), new Tuple<int, int>(0, 0));
+                //Tuple<int, Tuple<int, int>, Tuple<int, int>> result = new Tuple<int, Tuple<int, int>, Tuple<int, int>>(0, new Tuple<int, int>(0, 0), new Tuple<int, int>(0, 0));
 
-                //Console.WriteLine("Choosen square: " + ranSquareX + " : " + ranSquareY);
+                Console.WriteLine("Choosen square: " + ranSquareX + " : " + ranSquareY);
 
                 //Loop through each number in the square
                 for (int x1 = 0; x1 < nSqrd; x1++)
@@ -337,19 +358,28 @@ namespace Computationele_Intelligentie_Pi
                     }
                 }
 
-                Console.WriteLine("Best swap: " + bestResult.Item2.Item1 + " : " + bestResult.Item2.Item2 + " and " + bestResult.Item3.Item1 + " : " + bestResult.Item3.Item2 + " with score: " + bestResult.Item1);
+                if (bestResult.Item2 != null)
+                {
+                    Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with score: " + bestResult.Item1);
 
-                var pos1 = bestResult.Item2;
-                var pos2 = bestResult.Item3;
-                var num1 = boardExtra[pos1.Item1, pos1.Item2];
-                var num2 = boardExtra[pos2.Item1, pos2.Item2];
+                    var pos1 = bestResult.Item2;
+                    var pos2 = bestResult.Item3;
+                    var num1 = boardExtra[pos1.x, pos1.y];
+                    var num2 = boardExtra[pos2.x, pos2.y];
 
-                boardExtra[pos2.Item1, pos2.Item2] = num1; //Swap
-                boardExtra[pos1.Item1, pos1.Item2] = num2;
+                    boardExtra[pos2.x, pos2.y] = num1; //Swap
+                    boardExtra[pos1.x, pos1.y] = num2;
 
-                int eval = FullEvaluation();
+                    //PrintBoard(false);
 
-                Console.WriteLine("Iteration: " + i + " eval: " + eval);
+                    int eval = FullEvaluation();
+
+                    //Console.WriteLine("Iteration: " + i + " eval: " + eval);
+                }
+                else
+                {
+                    Console.WriteLine("Iteration: " + i + ". No swap.");
+                }
             }
         }
 
@@ -447,15 +477,15 @@ namespace Computationele_Intelligentie_Pi
 
         public int FullEvaluation()
         {
-            int eval = 0;//n * n;
+            int eval = n * n;
 
             for (int r = 0; r < n; r++)
             {
-                eval += EvaluateRow(r);
+                eval -= EvaluateRow(r);
             }
             for (int c = 0; c < n; c++)
             {
-                eval += Evaluatecolumn(c);
+                eval -= Evaluatecolumn(c);
             }
 
             return eval;
