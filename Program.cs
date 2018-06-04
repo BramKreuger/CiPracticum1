@@ -87,6 +87,8 @@ namespace Computationele_Intelligentie_Pi
 
             HillClimb();
 
+            //RandomSwaps(10);
+
             PrintBoard(false);
         }
 
@@ -145,7 +147,7 @@ namespace Computationele_Intelligentie_Pi
                             }
                             else
                             {
-                                boardExtra[xCor, yCor] = new Number(board[xCor, yCor], xCor, yCor, false); // Is the number "old"? Than fixed = TRUE
+                                boardExtra[xCor, yCor] = new Number(board[xCor, yCor], xCor, yCor, true); // Is the number "old"? Than fixed = TRUE
                             }
 
                         }
@@ -178,7 +180,7 @@ namespace Computationele_Intelligentie_Pi
                 {
                     for (int y = 0; y < n; y++)
                     {
-                        Console.Write(boardExtra[x, y].value + " ");
+                        Console.Write(boardExtra[x, y].anchored + " ");
                     }
                     Console.WriteLine();
                 }
@@ -206,7 +208,7 @@ namespace Computationele_Intelligentie_Pi
                 }
             }
 
-            Console.WriteLine("Row " + rowNumber + " evaluated: " + numbers.Count);
+            //Console.WriteLine("Row " + rowNumber + " evaluated: " + numbers.Count);
             return numbers.Count;
         }
 
@@ -230,7 +232,7 @@ namespace Computationele_Intelligentie_Pi
                 }
             }
 
-            Console.WriteLine("column " + columnNumber + " evaluated: " + numbers.Count);
+            //Console.WriteLine("column " + columnNumber + " evaluated: " + numbers.Count);
             return numbers.Count;
         }
 
@@ -247,59 +249,62 @@ namespace Computationele_Intelligentie_Pi
             Number number2 = boardExtra[y2, x2];
 
 
-            if (number1.anchored == false && number2.anchored == false && (x1 != x2 || y1 != y2)) // If both numbers are not "Fixed", or they are the same location
+            if(number1.anchored == false && number2.anchored == false) // If both numbers are not "Fixed", or they are the same location
             {
-                int eval = 0;
+                if (x1 != x2 && y1 != y2)
+                    {
+                    int eval = 0;
 
-                if (y1 == y2) // If the column is the same
-                {
-                    eval -= Evaluatecolumn(y1);
-                }
-                else
-                {
-                    eval -= Evaluatecolumn(y1);
-                    eval -= Evaluatecolumn(y2);
-                }
-                if (x1 == x2) // If the row is the same
-                {
-                    eval -= EvaluateRow(x1);
-                }
-                else
-                {
-                    eval -= EvaluateRow(x1);
-                    eval -= EvaluateRow(x2);
-                }
+                    if (y1 == y2) // If the column is the same
+                    {
+                        eval -= Evaluatecolumn(y1);
+                    }
+                    else
+                    {
+                        eval -= Evaluatecolumn(y1);
+                        eval -= Evaluatecolumn(y2);
+                    }
+                    if (x1 == x2) // If the row is the same
+                    {
+                        eval -= EvaluateRow(x1);
+                    }
+                    else
+                    {
+                        eval -= EvaluateRow(x1);
+                        eval -= EvaluateRow(x2);
+                    }
 
-                //Console.WriteLine("Initial eval: " + eval);
+                    //Console.WriteLine("Initial eval: " + eval);
 
-                boardExtra[y1, x1] = number2; //Swap
-                boardExtra[y2, x2] = number1;
+                    boardExtra[y1, x1] = number2; //Swap
+                    boardExtra[y2, x2] = number1;
 
-                if (y1 == y2) // If the column is the same
-                {
-                    eval += Evaluatecolumn(y1);
+                    if (y1 == y2) // If the column is the same
+                    {
+                        eval += Evaluatecolumn(y1);
+                    }
+                    else
+                    {
+                        eval += Evaluatecolumn(y1);
+                        eval += Evaluatecolumn(y2);
+                    }
+                    if (x1 == x2) // If the row is the same
+                    {
+                        eval += EvaluateRow(x1);
+                    }
+                    else
+                    {
+                        eval += EvaluateRow(x1);
+                        eval += EvaluateRow(x2);
+                    }
+
+                    //Console.WriteLine("Total eval difference: " + eval);
+
+                    boardExtra[y1, x1] = number1; //Swap back
+                    boardExtra[y2, x2] = number2;
+
+                    return new Tuple<int, Number, Number>(eval, number1, number2);
                 }
-                else
-                {
-                    eval += Evaluatecolumn(y1);
-                    eval += Evaluatecolumn(y2);
-                }
-                if (x1 == x2) // If the row is the same
-                {
-                    eval += EvaluateRow(x1);
-                }
-                else
-                {
-                    eval += EvaluateRow(x1);
-                    eval += EvaluateRow(x2);
-                }
-
-                //Console.WriteLine("Total eval difference: " + eval);
-
-                boardExtra[y1, x1] = number1; //Swap back
-                boardExtra[y2, x2] = number2;
-
-                return new Tuple<int, Number, Number>(eval, number1, number2);
             }
 
             return null;
@@ -310,22 +315,20 @@ namespace Computationele_Intelligentie_Pi
         /// </summary>
         public void HillClimb()
         {
-            Console.WriteLine("Initial evaluation: " + FullEvaluation());
+            //Console.WriteLine("Initial evaluation: " + FullEvaluation());
+            int noImprovement = 0;
 
             //Run the algorithm x times
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 100; i++)
             {
                 // Choose a random (Nsqrd x Nsqrd) Square
-                int ranSquareX = random.Next(0, nSqrd);
-                int ranSquareY = random.Next(0, nSqrd);
+                int ranSquareX = random.Next(0, nSqrd) * nSqrd;
+                int ranSquareY = random.Next(0, nSqrd) * nSqrd;
 
-                // Obscure way to store data: Item1 = evaluationValue, Item2 = <x1, y2>, Item3 = <x2, y2>
                 Tuple<int, Number, Number> bestResult = new Tuple<int, Number, Number>(0, null, null);
                 Tuple<int, Number, Number> result = new Tuple<int, Number, Number>(0, null, null);
-                //Tuple<int, Tuple<int, int>, Tuple<int, int>> bestResult = new Tuple<int, Tuple<int, int>, Tuple<int, int>>(0, new Tuple<int, int>(0, 0), new Tuple<int, int>(0, 0));
-                //Tuple<int, Tuple<int, int>, Tuple<int, int>> result = new Tuple<int, Tuple<int, int>, Tuple<int, int>>(0, new Tuple<int, int>(0, 0), new Tuple<int, int>(0, 0));
 
-                Console.WriteLine("Choosen square: " + ranSquareX + " : " + ranSquareY);
+                //Console.WriteLine("Choosen square: " + ranSquareX / nSqrd + " : " + ranSquareY / nSqrd);
 
                 //Loop through each number in the square
                 for (int x1 = 0; x1 < nSqrd; x1++)
@@ -334,6 +337,8 @@ namespace Computationele_Intelligentie_Pi
                     {
                         int xCor1 = ranSquareX + x1;
                         int yCor1 = ranSquareY + y1;
+
+                        //Console.WriteLine(xCor1 + " : " + yCor1);
 
                         //Do it again
 
@@ -358,28 +363,74 @@ namespace Computationele_Intelligentie_Pi
                     }
                 }
 
-                if (bestResult.Item2 != null)
+                if(bestResult.Item2 != null)
                 {
-                    Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with score: " + bestResult.Item1);
-
+                    //Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with score: " + bestResult.Item1);
+                    
                     var pos1 = bestResult.Item2;
                     var pos2 = bestResult.Item3;
-                    var num1 = boardExtra[pos1.x, pos1.y];
-                    var num2 = boardExtra[pos2.x, pos2.y];
 
-                    boardExtra[pos2.x, pos2.y] = num1; //Swap
-                    boardExtra[pos1.x, pos1.y] = num2;
+                    int x1 = pos1.y;
+                    int y1 = pos1.x;
+                    int x2 = pos2.y;
+                    int y2 = pos2.x; //Verkeerd om vanwege opslaan
+
+                    var n1 = boardExtra[x1,y1];
+                    var n2 = boardExtra[x2,y2];
+
+                    boardExtra[x1, y1] = new Number(n2.value, x1, y1, n2.anchored);
+                    boardExtra[x2, y2] = new Number(n1.value, x2, y2, n1.anchored);
 
                     //PrintBoard(false);
 
                     int eval = FullEvaluation();
 
-                    //Console.WriteLine("Iteration: " + i + " eval: " + eval);
+                    //Console.WriteLine("==== Iteration: " + i + " eval: " + eval + " ====");
                 }
                 else
                 {
-                    Console.WriteLine("Iteration: " + i + ". No swap.");
+                    //Console.WriteLine("Iteration: " + i + ". No swap.");
+                    noImprovement++;
+                    if(noImprovement > 25)
+                    {
+                        noImprovement = 0;
+                        RandomSwaps(2);
+                    }
                 }
+            }
+        }
+
+        public void RandomSwaps(int amount)
+        {
+            for (int i = 0; i < amount; i++)
+            {
+                Number n1 = new Number(0,0,0,true);
+                Number n2 = new Number(0,0,0,true);
+
+                int ranNumberX1 = 0;
+                int ranNumberY1 = 0;
+                int ranNumberX2 = 0;
+                int ranNumberY2 = 0;
+
+                while (n1.anchored == true || n2.anchored == true)
+                {
+                    // Choose a random (Nsqrd x Nsqrd) Square
+                    int ranSquareX = random.Next(0, nSqrd) * nSqrd;
+                    int ranSquareY = random.Next(0, nSqrd) * nSqrd;
+
+                    ranNumberX1 = ranSquareX + random.Next(0, nSqrd);
+                    ranNumberY1 = ranSquareY + random.Next(0, nSqrd);
+
+                    ranNumberX2 = ranSquareX + random.Next(0, nSqrd);
+                    ranNumberY2 = ranSquareY + random.Next(0, nSqrd);
+
+                    //Console.WriteLine("n1: " + ranNumberX2 + " : " + ranNumberY2 + " n2: " + ranNumberX1 + " : " + ranNumberY1);
+
+                    n1 = boardExtra[ranNumberY1, ranNumberX1];
+                    n2 = boardExtra[ranNumberY2, ranNumberX2];
+                }
+                boardExtra[ranNumberY1, ranNumberX1] = n2;
+                boardExtra[ranNumberY2, ranNumberX2] = n1;
             }
         }
 
@@ -477,15 +528,15 @@ namespace Computationele_Intelligentie_Pi
 
         public int FullEvaluation()
         {
-            int eval = n * n;
+            int eval = 0;
 
             for (int r = 0; r < n; r++)
             {
-                eval -= EvaluateRow(r);
+                eval += EvaluateRow(r);
             }
             for (int c = 0; c < n; c++)
             {
-                eval -= Evaluatecolumn(c);
+                eval += Evaluatecolumn(c);
             }
 
             return eval;
