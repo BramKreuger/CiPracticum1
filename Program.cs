@@ -11,7 +11,7 @@ namespace Computationele_Intelligentie_Pi
         static void Main(string[] args)
         {
             Console.WriteLine("Welcome to a sudokuSolver by: Bram Kreuger (5990653) & Pieter Barkema (...)");
-            Sudoku s = new Sudoku(false);                 
+            Sudoku s = new Sudoku(false, true);
             Console.ReadKey();
         }
     }
@@ -43,7 +43,7 @@ namespace Computationele_Intelligentie_Pi
         /// <summary>
         /// Constructor for the sudoku. Use the bool input to override the test sudoku. True = override, False = keep the old one (just for testing)
         /// </summary>
-        public Sudoku(bool overrideBoard)
+        public Sudoku(bool overrideBoard, bool randomstart)
         {
             if (overrideBoard)
             {
@@ -73,18 +73,25 @@ namespace Computationele_Intelligentie_Pi
 
             random = new Random();
 
-            //PrintBoard(true);
+            PrintBoard(true);
 
             FillBoard();
 
             PrintBoard(false);
 
-            //Console.WriteLine("Press any key to start HillClimbing...");
+            Console.WriteLine("Press any key to start HillClimbing...");
 
-            //Console.ReadKey();
+            Console.ReadKey();
 
-            //Console.WriteLine(" ");
+            Console.WriteLine(" ");
 
+            if (randomstart)
+            {
+                for (int i = 0; i < 99; i++)
+                {
+                    HillClimb();
+                }
+            }
             HillClimb();
 
             //RandomSwaps(10);
@@ -180,7 +187,7 @@ namespace Computationele_Intelligentie_Pi
                 {
                     for (int y = 0; y < n; y++)
                     {
-                        Console.Write(boardExtra[x, y].anchored + " ");
+                        Console.Write(boardExtra[x, y].value + " ");
                     }
                     Console.WriteLine();
                 }
@@ -249,10 +256,10 @@ namespace Computationele_Intelligentie_Pi
             Number number2 = boardExtra[y2, x2];
 
 
-            if(number1.anchored == false && number2.anchored == false) // If both numbers are not "Fixed", or they are the same location
+            if (number1.anchored == false && number2.anchored == false) // If both numbers are not "Fixed", or they are the same location
             {
                 if (x1 != x2 && y1 != y2)
-                    {
+                {
                     int eval = 0;
 
                     if (y1 == y2) // If the column is the same
@@ -278,7 +285,7 @@ namespace Computationele_Intelligentie_Pi
 
                     boardExtra[y1, x1] = number2; //Swap
                     boardExtra[y2, x2] = number1;
-
+                    
                     if (y1 == y2) // If the column is the same
                     {
                         eval += Evaluatecolumn(y1);
@@ -307,7 +314,7 @@ namespace Computationele_Intelligentie_Pi
                 }
             }
 
-            return null;
+            return new Tuple<int, Number, Number>(0, null, null);
         }
 
         /// <summary>
@@ -351,36 +358,54 @@ namespace Computationele_Intelligentie_Pi
 
                                 result = TrySwap(xCor1, yCor1, xCor2, yCor2);
 
-                                if (result != null)
-                                {
+                                //if (result != null)
+                                //{
                                     if (bestResult.Item1 < result.Item1)
                                     {
                                         bestResult = result;
                                     }
-                                }
+                                //}
                             }
                         }
                     }
                 }
 
-                if(bestResult.Item2 != null)
+                if (bestResult.Item2 != null)
                 {
-                    //Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with score: " + bestResult.Item1);
+                    //Console.WriteLine(bestResult.Item2);
+                    Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with score: " + bestResult.Item1);
+
+                    Number pos1 = bestResult.Item2;
+                    Number pos2 = bestResult.Item3;
+
+                    // Deze kan je in principe declareren in elke volgorde, als je er daarna consistent mee bent.
+                    // Ik heb ze nu omgedraaid, zodat x bij x1 hoort etc..
+                    int x1 = pos1.x;
+                    int y1 = pos1.y;
+                    int x2 = pos2.x;
+                    int y2 = pos2.y; //Verkeerd om vanwege opslaan
+
+                    // Ik vermoedde dat je hier, bij boardextra, bedoelde dat de eerste plek y coordinaat is, en tweede x?
+                    // Op andere plekken gebeurt dat niet, dus dit snap ik niet.
+                    var n1 = boardExtra[x1, y1];
+                    var n2 = boardExtra[x2, y2];
                     
-                    var pos1 = bestResult.Item2;
-                    var pos2 = bestResult.Item3;
+                    // Als je dit runt, zul je zien dat er inderdaad anchored numbers gewisseld worden 
+                    //if(boardExtra[x1,y1].anchored == true || boardExtra[x2, y2].anchored == true)
+                    //{
+                    //    Console.WriteLine("original 1: " + boardExtra[x1, y1].anchored + " and original 2: " + boardExtra[x2, y2].anchored);
+                    //}
 
-                    int x1 = pos1.y;
-                    int y1 = pos1.x;
-                    int x2 = pos2.y;
-                    int y2 = pos2.x; //Verkeerd om vanwege opslaan
-
-                    var n1 = boardExtra[x1,y1];
-                    var n2 = boardExtra[x2,y2];
-
+                    // Hier zit het probleem: bij een nieuw nummer aanmaken moet je weer eerst x en daarna y.
+                    // Ik heb de coordinates in new Number omgewisseld, zodat x als eerste coordinaat gegeven wordt en y als tweede.
                     boardExtra[x1, y1] = new Number(n2.value, x1, y1, n2.anchored);
                     boardExtra[x2, y2] = new Number(n1.value, x2, y2, n1.anchored);
 
+                    // Als je dit runt, zul je zien dat de anchored booleans wel geswitched worden.
+                    //if (boardExtra[x1, y1].anchored == true || boardExtra[x2, y2].anchored == true)
+                    //{
+                    //    Console.WriteLine("after switch new 1: " + boardExtra[x1, y1].anchored + " and new 2: " + boardExtra[x2, y2].anchored);
+                    //}
                     //PrintBoard(false);
 
                     int eval = FullEvaluation();
@@ -391,7 +416,7 @@ namespace Computationele_Intelligentie_Pi
                 {
                     //Console.WriteLine("Iteration: " + i + ". No swap.");
                     noImprovement++;
-                    if(noImprovement > 25)
+                    if (noImprovement > 25)
                     {
                         noImprovement = 0;
                         RandomSwaps(2);
@@ -404,8 +429,8 @@ namespace Computationele_Intelligentie_Pi
         {
             for (int i = 0; i < amount; i++)
             {
-                Number n1 = new Number(0,0,0,true);
-                Number n2 = new Number(0,0,0,true);
+                Number n1 = new Number(0, 0, 0, true);
+                Number n2 = new Number(0, 0, 0, true);
 
                 int ranNumberX1 = 0;
                 int ranNumberY1 = 0;
@@ -475,7 +500,7 @@ namespace Computationele_Intelligentie_Pi
         /// Ask for input from the user. This is an self-contained method so it can be called recursively.
         /// </summary>
         public void AskInput(List<int> seperators, string textFile)
-        {            
+        {
             Console.WriteLine("Choose a sudoku-puzzel from: 0 to: " + (seperators.Count - 1) + " . By typing the corrosponding number");
             string sudokuInput = Console.ReadLine();
             if (int.TryParse(sudokuInput, out int res))
@@ -508,7 +533,7 @@ namespace Computationele_Intelligentie_Pi
             int[,] sudoku = null;
 
             List<string> allLines = (from l in textFile.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
-                            select l).ToList(); // Splits the lines on the newlines
+                                     select l).ToList(); // Splits the lines on the newlines
 
             int size = seperators[sudokuNumber + 1] - (seperators[sudokuNumber] + 1);
             sudoku = new int[size, size];
@@ -539,6 +564,7 @@ namespace Computationele_Intelligentie_Pi
                 eval += Evaluatecolumn(c);
             }
 
+            Console.WriteLine("full eval: " + eval);
             return eval;
         }
     }
