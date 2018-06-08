@@ -78,7 +78,7 @@ namespace Computationele_Intelligentie_Pi
             FillBoard();
 
             PrintBoard(false);
-
+            
             Console.WriteLine("Press any key to start HillClimbing...");
 
             Console.ReadKey();
@@ -89,7 +89,7 @@ namespace Computationele_Intelligentie_Pi
             {
                 for (int i = 0; i < 99; i++)
                 {
-                    HillClimb();
+                   // HillClimb();
                 }
             }
             HillClimb();
@@ -201,22 +201,13 @@ namespace Computationele_Intelligentie_Pi
         /// <param name="rowNumber">Which row to evaluate</param>
         public int EvaluateRow(int rowNumber)
         {
-            List<int> numbers = new List<int>();
-            for (int i = 1; i < n + 1; i++)
-            {
-                numbers.Add(i);
-            }
-
+            HashSet<int> numbers = new HashSet<int>();
             for (int y = 0; y < n; y++)
             {
-                if (numbers.Contains(boardExtra[rowNumber, y].value))
-                {
-                    numbers.Remove(boardExtra[rowNumber, y].value);
-                }
+                numbers.Add(boardExtra[rowNumber, y].value);
             }
-
             //Console.WriteLine("Row " + rowNumber + " evaluated: " + numbers.Count);
-            return numbers.Count;
+            return n - numbers.Count;
         }
 
         /// <summary>
@@ -225,22 +216,13 @@ namespace Computationele_Intelligentie_Pi
         /// <param name="columnNumber">Which column to evaluate</param>
         public int Evaluatecolumn(int columnNumber)
         {
-            List<int> numbers = new List<int>();
-            for (int i = 1; i < n + 1; i++)
-            {
-                numbers.Add(i);
-            }
-
+            HashSet<int> numbers = new HashSet<int>();
             for (int x = 0; x < n; x++)
             {
-                if (numbers.Contains(boardExtra[x, columnNumber].value))
-                {
-                    numbers.Remove(boardExtra[x, columnNumber].value);
-                }
+                numbers.Add(boardExtra[x, columnNumber].value);
             }
-
-            //Console.WriteLine("column " + columnNumber + " evaluated: " + numbers.Count);
-            return numbers.Count;
+            //Console.WriteLine("Collumn " + columnNumber + " evaluated: " + numbers.Count);
+            return n - numbers.Count;
         }
 
         /// <summary>
@@ -262,7 +244,7 @@ namespace Computationele_Intelligentie_Pi
                 {
                     int eval = 0;
 
-                    if (y1 == y2) // If the column is the same
+                    /*if (y1 == y2) // If the column is the same
                     {
                         eval -= Evaluatecolumn(y1);
                     }
@@ -279,13 +261,13 @@ namespace Computationele_Intelligentie_Pi
                     {
                         eval -= EvaluateRow(x1);
                         eval -= EvaluateRow(x2);
-                    }
+                    }*/
 
                     //Console.WriteLine("Initial eval: " + eval);
 
                     boardExtra[y1, x1] = number2; //Swap
                     boardExtra[y2, x2] = number1;
-                    
+
                     if (y1 == y2) // If the column is the same
                     {
                         eval += Evaluatecolumn(y1);
@@ -324,13 +306,20 @@ namespace Computationele_Intelligentie_Pi
         {
             //Console.WriteLine("Initial evaluation: " + FullEvaluation());
             int noImprovement = 0;
+            Tuple<int, int> previousSquare = new Tuple<int, int>(0,0); //Remember this square so that the random HC doesn't choose the same square twice 
 
             //Run the algorithm x times
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 10; i++)
             {
-                // Choose a random (Nsqrd x Nsqrd) Square
-                int ranSquareX = random.Next(0, nSqrd) * nSqrd;
-                int ranSquareY = random.Next(0, nSqrd) * nSqrd;
+                int ranSquareX = 0;
+                int ranSquareY = 0;
+
+                // Choose a semi-random (Nsqrd x Nsqrd) Square
+                while (previousSquare.Item1 == ranSquareX && previousSquare.Item2 == ranSquareY)
+                {
+                    ranSquareX = random.Next(0, nSqrd) * nSqrd;
+                    ranSquareY = random.Next(0, nSqrd) * nSqrd;
+                }
 
                 Tuple<int, Number, Number> bestResult = new Tuple<int, Number, Number>(0, null, null);
                 Tuple<int, Number, Number> result = new Tuple<int, Number, Number>(0, null, null);
@@ -360,10 +349,10 @@ namespace Computationele_Intelligentie_Pi
 
                                 //if (result != null)
                                 //{
-                                    if (bestResult.Item1 < result.Item1)
-                                    {
-                                        bestResult = result;
-                                    }
+                                if (bestResult.Item1 < result.Item1)
+                                {
+                                    bestResult = result;
+                                }
                                 //}
                             }
                         }
@@ -373,7 +362,7 @@ namespace Computationele_Intelligentie_Pi
                 if (bestResult.Item2 != null)
                 {
                     //Console.WriteLine(bestResult.Item2);
-                    Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with score: " + bestResult.Item1);
+                   // Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with score: " + bestResult.Item1);
 
                     Number pos1 = bestResult.Item2;
                     Number pos2 = bestResult.Item3;
@@ -389,7 +378,7 @@ namespace Computationele_Intelligentie_Pi
                     // Op andere plekken gebeurt dat niet, dus dit snap ik niet.
                     var n1 = boardExtra[x1, y1];
                     var n2 = boardExtra[x2, y2];
-                    
+
                     // Als je dit runt, zul je zien dat er inderdaad anchored numbers gewisseld worden 
                     //if(boardExtra[x1,y1].anchored == true || boardExtra[x2, y2].anchored == true)
                     //{
@@ -408,18 +397,19 @@ namespace Computationele_Intelligentie_Pi
                     //}
                     //PrintBoard(false);
 
+                    previousSquare = new Tuple<int, int>(ranSquareX / nSqrd, ranSquareY / nSqrd);
                     int eval = FullEvaluation();
 
-                    //Console.WriteLine("==== Iteration: " + i + " eval: " + eval + " ====");
+                    Console.WriteLine("==== Iteration: " + i + " eval: " + eval + " imp: " + bestResult.Item1 + " ====");
                 }
                 else
                 {
-                    //Console.WriteLine("Iteration: " + i + ". No swap.");
+                    Console.WriteLine("Iteration: " + i + ". No swap.");
                     noImprovement++;
                     if (noImprovement > 25)
                     {
                         noImprovement = 0;
-                        RandomSwaps(2);
+                        RandomSwaps(12);
                     }
                 }
             }
@@ -564,7 +554,7 @@ namespace Computationele_Intelligentie_Pi
                 eval += Evaluatecolumn(c);
             }
 
-            Console.WriteLine("full eval: " + eval);
+            //Console.WriteLine("full eval: " + eval);
             return eval;
         }
     }
