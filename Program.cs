@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Diagnostics;
+using System.Threading;
 
 namespace Computationele_Intelligentie_Pi
 {
@@ -10,8 +12,46 @@ namespace Computationele_Intelligentie_Pi
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Welcome to a sudokuSolver by: Bram Kreuger (5990653) & Pieter Barkema (...)");
-            Sudoku s = new Sudoku(false, true);
+            // Without exhaustive testing, best result on testing one set of parameters:
+            Console.WriteLine("Welcome to a sudokuSolver by: Bram Kreuger (5990653) & Pieter Barkema (5979412)");
+            Sudoku s = new Sudoku(false, 20, 50, 25, 8);
+            Console.WriteLine("Beste resultaat: " + s.simplythebest);
+
+            //// Exhaustive testing on standard sudoku: var 1 (after overrideBoard=false): amount of random restarts; var 2: amount of hillclimbs, var 3: no improvement threshold;
+            //// var 4: amount of random swaps after no improvement threshold is reached.
+            //int[] rand_re = new int[3] { 1, 20, 100 };//, 200, 500 };
+            //int[] hillclimbs = new int[3] { 1, 10, 20 };//, 100, 500 };
+            //int[] no_improv = new int[2] { 10, 25 };//, 250, 2500 };
+            //int[] rand_swap = new int[3] { 3, 5, 8 };//, 15 };
+            //List<Tuple<string, int, double>> results = new List<Tuple<string, int, double>> { };
+            //Stopwatch timer = new Stopwatch();
+
+            //foreach (int re in rand_re)
+            //{
+            //    foreach (int hill in hillclimbs)
+            //    {
+            //        foreach (int noimp in no_improv)
+            //        {
+            //            foreach (int swap in rand_swap)
+            //            {
+            //                timer.Reset();
+            //                timer.Start();
+            //                Sudoku s = new Sudoku(false, re, hill, noimp, swap);
+            //                timer.Stop();
+            //                string curr_params = "Random restart: " + re.ToString() + " hill climbs: " + hill.ToString() + " no improves: " + noimp.ToString() + " random swaps: " + swap.ToString();
+            //                results.Add(new Tuple<string, int, double>(curr_params, s.simplythebest, timer.ElapsedMilliseconds));
+            //            }
+            //        }
+            //    }
+            //}
+            //results.Sort((x, y) => x.Item2.CompareTo(y.Item2));
+            ////foreach (Tuple<string, int, double> t in results)
+            ////{
+
+            ////}
+            //Console.WriteLine("Best result is: " + results[0].Item1 + ", with result: " + results[0].Item2 + " time in ms: " + results[0].Item3);
+
+
             Console.ReadKey();
         }
     }
@@ -38,65 +78,72 @@ namespace Computationele_Intelligentie_Pi
         public Number[,] boardExtra; // The same 2D array, but now with tuples. Int meaning the number, The bool meaning wether the number is fixed = TRUE or not-fixed = FALSE
         int n; // The size of the sudoku, we will use: 9, 16 or 25
         int nSqrd; // The square root of n: 3, 4 or 5
+        public int simplythebest; // The best evaluation during all intervals of a sudoku under given parameters
         Random random;
 
         /// <summary>
         /// Constructor for the sudoku. Use the bool input to override the test sudoku. True = override, False = keep the old one (just for testing)
         /// </summary>
-        public Sudoku(bool overrideBoard, bool randomstart)
-        {
-            if (overrideBoard)
+        public Sudoku(bool overrideBoard, int rand_re, int x_climbs, int no_improv_thres, int x_randswaps)
+        {   random = new Random(); // Seed a random
+                                   
+            // For reading in sudoku's from standard or from sudoku_puzzels.txt -- Not functional --
+            //int[,] originalboard; // Provide algorithm with original sudoku for random restart
+
+            //// If overrideBoard: read in a sudoku
+            //if (overrideBoard)
+            //{
+            //    Initialize();
+            //    originalboard = board;
+            //    PrintBoard(true);
+                
+            //}
+            //// Else: use test sudoku
+            //else
+            //{
+
+            //}
+
+            for (int i = 0; i < rand_re; i++)
             {
-                Initialize();
-            }
-            else
-            {
+
                 board = new int[,]
-            {
-                {0,0,0,0,0,0,0,0,0 },
-                {0,0,0,0,0,3,0,8,5 },
-                {0,0,1,0,2,0,0,0,0 },
-                {0,0,0,5,0,7,0,0,0 },
-                {0,0,4,0,0,0,1,0,0 },
-                {0,9,0,0,0,0,0,0,0 },
-                {5,0,0,0,0,0,0,7,3 },
-                {0,0,2,0,1,0,0,0,0 },
-                {0,0,0,0,4,0,0,0,9 }
-            };
-            }
-
-            n = board.GetLength(0);
-
-            boardExtra = new Number[n, n];
-
-            nSqrd = (int)Math.Sqrt(n);
-
-            random = new Random();
-
-            PrintBoard(true);
-
-            FillBoard();
-
-            PrintBoard(false);
-            
-            Console.WriteLine("Press any key to start HillClimbing...");
-
-            Console.ReadKey();
-
-            Console.WriteLine(" ");
-
-            if (randomstart)
-            {
-                for (int i = 0; i < 99; i++)
                 {
-                   // HillClimb();
+                                        {0,0,0,0,0,0,0,0,0 },
+                                        {0,0,0,0,0,3,0,8,5 },
+                                        {0,0,1,0,2,0,0,0,0 },
+                                        {0,0,0,5,0,7,0,0,0 },
+                                        {0,0,4,0,0,0,1,0,0 },
+                                        {0,9,0,0,0,0,0,0,0 },
+                                        {5,0,0,0,0,0,0,7,3 },
+                                        {0,0,2,0,1,0,0,0,0 },
+                                        {0,0,0,0,4,0,0,0,9 }
+                };
+                // Method for reading in sudoku's rather than using the standard one.
+                n = board.GetLength(0); // Width/length of board    
+                nSqrd = (int)Math.Sqrt(n); // Width/length of cube
+                boardExtra = new Number[n, n]; // The mutable and filled in version of sudoku.
+
+                //PrintBoard(true);
+
+                FillBoard();
+
+                //PrintBoard(false);
+
+                //Console.WriteLine("Press any key to start HillClimbing..."); // not for test mode
+
+                // Get the best evaluation from all iterations of a run for testing purposes
+                simplythebest = Int32.MaxValue;
+                HillClimb(x_climbs, no_improv_thres, x_randswaps);
+                if (FullEvaluation() < simplythebest)
+                {
+                    simplythebest = FullEvaluation();
                 }
+
+
             }
-            HillClimb();
 
-            //RandomSwaps(10);
-
-            PrintBoard(false);
+            //PrintBoard(false);
         }
 
         /// <summary>
@@ -128,17 +175,17 @@ namespace Computationele_Intelligentie_Pi
                             int xCor = xSq + x;
                             int yCor = ySq + y;
 
-                            if (board[xCor, yCor] != 0)
+                            if (board[yCor, xCor] != 0)
                             {
-                                numbers.Remove(board[xCor, yCor]);
+                                numbers.Remove(board[yCor, xCor]);
                             }
 
                         }
                     }
 
-                    // Second time trough the square, now fill the 0's with the numbers from the list, which becomes a stack :)
-                    Stack<int> numStack = new Stack<int>(numbers);
-
+                    // Not in use: Second time trough the square, now fill the 0's with the numbers from the list, which becomes a stack :)
+                    //              Stack<int> numStack = new Stack<int>(numbers);
+                    // Currently: Randomize the way the sudoku is filled in for more exploration in the search domain.
                     for (int x = 0; x < nSqrd; x++)
                     {
                         for (int y = 0; y < nSqrd; y++)
@@ -146,15 +193,17 @@ namespace Computationele_Intelligentie_Pi
                             int xCor = xSq + x;
                             int yCor = ySq + y;
 
-                            if (board[xCor, yCor] == 0)
+                            if (board[yCor, xCor] == 0)
                             {
-                                int number = numStack.Pop();
-                                board[xCor, yCor] = number;
-                                boardExtra[xCor, yCor] = new Number(number, xCor, yCor, false); // Is the number "new"? Than fixed = FALSE
+                                int number = numbers[random.Next(0,numbers.Count())];
+                                numbers.Remove(number);
+                                board[yCor, xCor] = number;
+                                 
+                                boardExtra[xCor, yCor] = new Number(number, xCor, yCor, false); // Is the cell value not given? Than fixed = FALSE
                             }
                             else
                             {
-                                boardExtra[xCor, yCor] = new Number(board[xCor, yCor], xCor, yCor, true); // Is the number "old"? Than fixed = TRUE
+                                boardExtra[xCor, yCor] = new Number(board[yCor, xCor], xCor, yCor, true); // Is the cell value given? Than fixed = TRUE
                             }
 
                         }
@@ -171,11 +220,11 @@ namespace Computationele_Intelligentie_Pi
         {
             if (printOriginal)
             {
-                for (int x = 0; x < n; x++)
+                for (int y = 0; y < n; y++)
                 {
-                    for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
                     {
-                        Console.Write(board[x, y] + " ");
+                        Console.Write(board[y,x] + " ");
                     }
                     Console.WriteLine();
                 }
@@ -183,9 +232,9 @@ namespace Computationele_Intelligentie_Pi
             }
             else
             {
-                for (int x = 0; x < n; x++)
+                for (int y = 0; y < n; y++)
                 {
-                    for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
                     {
                         Console.Write(boardExtra[x, y].value + " ");
                     }
@@ -202,11 +251,13 @@ namespace Computationele_Intelligentie_Pi
         public int EvaluateRow(int rowNumber)
         {
             HashSet<int> numbers = new HashSet<int>();
-            for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
             {
-                numbers.Add(boardExtra[rowNumber, y].value);
+                numbers.Add(boardExtra[x, rowNumber].value);
             }
-            //Console.WriteLine("Row " + rowNumber + " evaluated: " + numbers.Count);
+            //Console.WriteLine("Row " + rowNumber + " evaluated: " + (n-numbers.Count));
+
+            // Return the amount of mistakes made in a given row.
             return n - numbers.Count;
         }
 
@@ -217,11 +268,13 @@ namespace Computationele_Intelligentie_Pi
         public int Evaluatecolumn(int columnNumber)
         {
             HashSet<int> numbers = new HashSet<int>();
-            for (int x = 0; x < n; x++)
+            for (int y = 0; y < n; y++)
             {
-                numbers.Add(boardExtra[x, columnNumber].value);
+                numbers.Add(boardExtra[columnNumber,y].value);
             }
-            //Console.WriteLine("Collumn " + columnNumber + " evaluated: " + numbers.Count);
+
+            //Console.WriteLine("Collumn " + columnNumber + " evaluated: " + (n-numbers.Count));
+            // Return the amount of mistakes made in a given column.
             return n - numbers.Count;
         }
 
@@ -234,97 +287,78 @@ namespace Computationele_Intelligentie_Pi
         /// <param name="y2">Y coordinate of the second number.</param>
         public Tuple<int, Number, Number> TrySwap(int x1, int y1, int x2, int y2)
         {
-            Number number1 = boardExtra[y1, x1];
-            Number number2 = boardExtra[y2, x2];
+            Number number1 = boardExtra[x1, y1];
+            Number number2 = boardExtra[x2, y2];
 
-
+            //Console.WriteLine("number 1: ", x1, ",", y1, " number 2: ", x2, ",", y2);
             if (number1.anchored == false && number2.anchored == false) // If both numbers are not "Fixed", or they are the same location
             {
                 if (x1 != x2 && y1 != y2)
                 {
                     int eval = 0;
 
-                    /*if (y1 == y2) // If the column is the same
-                    {
-                        eval -= Evaluatecolumn(y1);
-                    }
-                    else
-                    {
-                        eval -= Evaluatecolumn(y1);
-                        eval -= Evaluatecolumn(y2);
-                    }
-                    if (x1 == x2) // If the row is the same
-                    {
-                        eval -= EvaluateRow(x1);
-                    }
-                    else
-                    {
-                        eval -= EvaluateRow(x1);
-                        eval -= EvaluateRow(x2);
-                    }*/
-
                     //Console.WriteLine("Initial eval: " + eval);
 
-                    boardExtra[y1, x1] = number2; //Swap
-                    boardExtra[y2, x2] = number1;
+                    boardExtra[x1, y1] = number2; //Swap
+                    boardExtra[x2, y2] = number1;
 
                     if (y1 == y2) // If the column is the same
                     {
-                        eval += Evaluatecolumn(y1);
+                        eval += Evaluatecolumn(x1);
                     }
                     else
                     {
-                        eval += Evaluatecolumn(y1);
-                        eval += Evaluatecolumn(y2);
+                        eval += Evaluatecolumn(x1);
+                        eval += Evaluatecolumn(x2);
                     }
                     if (x1 == x2) // If the row is the same
                     {
-                        eval += EvaluateRow(x1);
+                        eval += EvaluateRow(y1);
                     }
                     else
                     {
-                        eval += EvaluateRow(x1);
-                        eval += EvaluateRow(x2);
+                        eval += EvaluateRow(y1);
+                        eval += EvaluateRow(y2);
                     }
 
                     //Console.WriteLine("Total eval difference: " + eval);
 
-                    boardExtra[y1, x1] = number1; //Swap back
-                    boardExtra[y2, x2] = number2;
+                    boardExtra[x1, y1] = number1; //Swap back
+                    boardExtra[x2, y2] = number2;
 
+                    // return amount of mistakes in eval for a given swap
                     return new Tuple<int, Number, Number>(eval, number1, number2);
                 }
             }
 
-            return new Tuple<int, Number, Number>(0, null, null);
+            return new Tuple<int, Number, Number>(Int32.MaxValue, null, null);
         }
 
         /// <summary>
         /// Runs the Hillclimbing algorithm
         /// </summary>
-        public void HillClimb()
+        public void HillClimb(int x_climbs, int no_improv_thres, int x_randswaps)
         {
             //Console.WriteLine("Initial evaluation: " + FullEvaluation());
-            int noImprovement = 0;
-            Tuple<int, int> previousSquare = new Tuple<int, int>(0,0); //Remember this square so that the random HC doesn't choose the same square twice 
 
+            // Threshold for implementing random walk (using x random swaps)
+            int noImprovement = 0;
+           
             //Run the algorithm x times
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < x_climbs; i++)
             {
                 int ranSquareX = 0;
                 int ranSquareY = 0;
 
-                // Choose a semi-random (Nsqrd x Nsqrd) Square
-                while (previousSquare.Item1 == ranSquareX && previousSquare.Item2 == ranSquareY)
-                {
+                // Choose a random (Nsqrd x Nsqrd) Square
+                    
                     ranSquareX = random.Next(0, nSqrd) * nSqrd;
                     ranSquareY = random.Next(0, nSqrd) * nSqrd;
-                }
 
-                Tuple<int, Number, Number> bestResult = new Tuple<int, Number, Number>(0, null, null);
-                Tuple<int, Number, Number> result = new Tuple<int, Number, Number>(0, null, null);
+                Tuple<int, Number, Number> bestResult = new Tuple<int, Number, Number>(Int32.MaxValue-1, null, null);
+                Tuple<int, Number, Number> result = new Tuple<int, Number, Number>(Int32.MaxValue, null, null);
 
-                //Console.WriteLine("Choosen square: " + ranSquareX / nSqrd + " : " + ranSquareY / nSqrd);
+                //Console.WriteLine("Chosen square: " + ranSquareX / nSqrd + " : " + ranSquareY / nSqrd);
 
                 //Loop through each number in the square
                 for (int x1 = 0; x1 < nSqrd; x1++)
@@ -349,9 +383,11 @@ namespace Computationele_Intelligentie_Pi
 
                                 //if (result != null)
                                 //{
-                                if (bestResult.Item1 < result.Item1)
+                                if (result.Item1 < bestResult.Item1)
                                 {
+                                   
                                     bestResult = result;
+                                    //Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " with number: " + bestResult.Item2.value + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with value: " + bestResult.Item3.value + " with score: " + bestResult.Item1);
                                 }
                                 //}
                             }
@@ -362,13 +398,12 @@ namespace Computationele_Intelligentie_Pi
                 if (bestResult.Item2 != null)
                 {
                     //Console.WriteLine(bestResult.Item2);
-                   // Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with score: " + bestResult.Item1);
+                    //Console.WriteLine("Best swap: " + bestResult.Item2.x + " : " + bestResult.Item2.y + " with number: " + bestResult.Item2.value + " and " + bestResult.Item3.x + " : " + bestResult.Item3.y + " with value: " + bestResult.Item3.value + " with score: " + bestResult.Item1);
 
+                    // Cells used in best swap:
                     Number pos1 = bestResult.Item2;
                     Number pos2 = bestResult.Item3;
 
-                    // Deze kan je in principe declareren in elke volgorde, als je er daarna consistent mee bent.
-                    // Ik heb ze nu omgedraaid, zodat x bij x1 hoort etc..
                     int x1 = pos1.x;
                     int y1 = pos1.y;
                     int x2 = pos2.x;
@@ -379,39 +414,30 @@ namespace Computationele_Intelligentie_Pi
                     var n1 = boardExtra[x1, y1];
                     var n2 = boardExtra[x2, y2];
 
-                    // Als je dit runt, zul je zien dat er inderdaad anchored numbers gewisseld worden 
-                    //if(boardExtra[x1,y1].anchored == true || boardExtra[x2, y2].anchored == true)
-                    //{
-                    //    Console.WriteLine("original 1: " + boardExtra[x1, y1].anchored + " and original 2: " + boardExtra[x2, y2].anchored);
-                    //}
-
                     // Hier zit het probleem: bij een nieuw nummer aanmaken moet je weer eerst x en daarna y.
                     // Ik heb de coordinates in new Number omgewisseld, zodat x als eerste coordinaat gegeven wordt en y als tweede.
                     boardExtra[x1, y1] = new Number(n2.value, x1, y1, n2.anchored);
                     boardExtra[x2, y2] = new Number(n1.value, x2, y2, n1.anchored);
 
-                    // Als je dit runt, zul je zien dat de anchored booleans wel geswitched worden.
-                    //if (boardExtra[x1, y1].anchored == true || boardExtra[x2, y2].anchored == true)
-                    //{
-                    //    Console.WriteLine("after switch new 1: " + boardExtra[x1, y1].anchored + " and new 2: " + boardExtra[x2, y2].anchored);
-                    //}
                     //PrintBoard(false);
 
-                    previousSquare = new Tuple<int, int>(ranSquareX / nSqrd, ranSquareY / nSqrd);
-                    int eval = FullEvaluation();
-
-                    Console.WriteLine("==== Iteration: " + i + " eval: " + eval + " imp: " + bestResult.Item1 + " ====");
+                    //int eval = FullEvaluation();
+                    //Console.WriteLine("==== Iteration: " + i + " eval: " + eval + " imp: " + bestResult.Item1 + " ====");
                 }
+
+                // Use randomwalk if no improvement within given threshold
                 else
                 {
-                    Console.WriteLine("Iteration: " + i + ". No swap.");
+                    //Console.WriteLine("Iteration: " + i + ". No swap.");
                     noImprovement++;
-                    if (noImprovement > 25)
+                    if (noImprovement > no_improv_thres)
                     {
                         noImprovement = 0;
-                        RandomSwaps(12);
+                        RandomSwaps(x_randswaps);
                     }
                 }
+                //PrintBoard(false);
+                //Console.ReadLine();
             }
         }
 
@@ -419,6 +445,7 @@ namespace Computationele_Intelligentie_Pi
         {
             for (int i = 0; i < amount; i++)
             {
+                // Pick two random unfixed numbers and swap them.
                 Number n1 = new Number(0, 0, 0, true);
                 Number n2 = new Number(0, 0, 0, true);
 
@@ -441,11 +468,11 @@ namespace Computationele_Intelligentie_Pi
 
                     //Console.WriteLine("n1: " + ranNumberX2 + " : " + ranNumberY2 + " n2: " + ranNumberX1 + " : " + ranNumberY1);
 
-                    n1 = boardExtra[ranNumberY1, ranNumberX1];
-                    n2 = boardExtra[ranNumberY2, ranNumberX2];
+                    n1 = boardExtra[ranNumberX1, ranNumberY1];
+                    n2 = boardExtra[ranNumberX2, ranNumberY2];
                 }
-                boardExtra[ranNumberY1, ranNumberX1] = n2;
-                boardExtra[ranNumberY2, ranNumberX2] = n1;
+                boardExtra[ranNumberX1, ranNumberY1] = n2;
+                boardExtra[ranNumberX2, ranNumberY2] = n1;
             }
         }
 
@@ -482,6 +509,7 @@ namespace Computationele_Intelligentie_Pi
                 seperators.Add(counter - 1); //Add last line for processing 
             }
             // So now you've got a list of numbers containing the beginnings and ends of the sudoku's and the loaded textfile
+
             AskInput(seperators, textFile);
 
         }
@@ -535,7 +563,7 @@ namespace Computationele_Intelligentie_Pi
             {
                 for (int x = 0; x < size; x++)
                 {
-                    sudoku[y, x] = (charlist[y])[x];
+                    sudoku[x, y] = (charlist[x])[y];
                 }
             }
             board = sudoku;
@@ -543,6 +571,9 @@ namespace Computationele_Intelligentie_Pi
 
         public int FullEvaluation()
         {
+
+            // Evaluate full board by adding all mistakes of all columns and rows;
+            // One number can cause a mistake in its column and row.
             int eval = 0;
 
             for (int r = 0; r < n; r++)
