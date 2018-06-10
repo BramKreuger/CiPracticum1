@@ -14,15 +14,21 @@ namespace Computationele_Intelligentie_Pi
         {
             // Without exhaustive testing, best result on testing one set of parameters:
             Console.WriteLine("Welcome to a sudokuSolver by: Bram Kreuger (5990653) & Pieter Barkema (5979412)");
-            Sudoku s = new Sudoku(false, 20, 50, 25, 8);
-            Console.WriteLine("Beste resultaat: " + s.simplythebest);
+            List<int> sudoku_results = new List<int> { };
+            for (int i = 0; i < 10; i++)
+            {
+                Sudoku s = new Sudoku(true, 20, 50, 25, 8, i);
+                Console.WriteLine("Resultaat van sudoku: " + i + " is: " + s.simplythebest);
+            }
+            
+            
 
             //// Exhaustive testing on standard sudoku: var 1 (after overrideBoard=false): amount of random restarts; var 2: amount of hillclimbs, var 3: no improvement threshold;
             //// var 4: amount of random swaps after no improvement threshold is reached.
             //int[] rand_re = new int[3] { 1, 20, 100 };//, 200, 500 };
-            //int[] hillclimbs = new int[3] { 1, 10, 20 };//, 100, 500 };
-            //int[] no_improv = new int[2] { 10, 25 };//, 250, 2500 };
-            //int[] rand_swap = new int[3] { 3, 5, 8 };//, 15 };
+            //int[] hillclimbs = new int[3] { 1, 10, 20 };//, 100, 500 }; 500 is een beetje weinig ondergrens 500 10.000
+            //int[] no_improv = new int[2] { 10, 25 };//, 250 }; rond de 50 houden, 250 kan wel
+            //int[] rand_swap = new int[3] { 3, 5, 8 };//, 15 }; // 5 t/m 20
             //List<Tuple<string, int, double>> results = new List<Tuple<string, int, double>> { };
             //Stopwatch timer = new Stopwatch();
 
@@ -36,10 +42,12 @@ namespace Computationele_Intelligentie_Pi
             //            {
             //                timer.Reset();
             //                timer.Start();
-            //                Sudoku s = new Sudoku(false, re, hill, noimp, swap);
+            //                Sudoku s = new Sudoku(false, re, hill, noimp, swap, 0);
             //                timer.Stop();
             //                string curr_params = "Random restart: " + re.ToString() + " hill climbs: " + hill.ToString() + " no improves: " + noimp.ToString() + " random swaps: " + swap.ToString();
             //                results.Add(new Tuple<string, int, double>(curr_params, s.simplythebest, timer.ElapsedMilliseconds));
+            //                Console.WriteLine(results.Count());
+            //                Console.WriteLine(curr_params);
             //            }
             //        }
             //    }
@@ -84,45 +92,66 @@ namespace Computationele_Intelligentie_Pi
         /// <summary>
         /// Constructor for the sudoku. Use the bool input to override the test sudoku. True = override, False = keep the old one (just for testing)
         /// </summary>
-        public Sudoku(bool overrideBoard, int rand_re, int x_climbs, int no_improv_thres, int x_randswaps)
+        public Sudoku(bool overrideBoard, int rand_re, int x_climbs, int no_improv_thres, int x_randswaps, int sudoku_nr)
         {   random = new Random(); // Seed a random
-                                   
             // For reading in sudoku's from standard or from sudoku_puzzels.txt -- Not functional --
-            //int[,] originalboard; // Provide algorithm with original sudoku for random restart
+            int[,] originalboard; // Provide algorithm with original sudoku for random restart
 
-            //// If overrideBoard: read in a sudoku
-            //if (overrideBoard)
-            //{
-            //    Initialize();
-            //    originalboard = board;
-            //    PrintBoard(true);
-                
-            //}
-            //// Else: use test sudoku
-            //else
-            //{
+            // If overrideBoard: read in a sudoku
+            if (overrideBoard)
+            {
+                Initialize(sudoku_nr);
+                originalboard = board;
+            }
+            // Else: use test sudoku
+            else
+            {
+                originalboard = new int[,]
+                {
+                                            {0,0,0,0,0,0,0,0,0 },
+                                            {0,0,0,0,0,3,0,8,5 },
+                                            {0,0,1,0,2,0,0,0,0 },
+                                            {0,0,0,5,0,7,0,0,0 },
+                                            {0,0,4,0,0,0,1,0,0 },
+                                            {0,9,0,0,0,0,0,0,0 },
+                                            {5,0,0,0,0,0,0,7,3 },
+                                            {0,0,2,0,1,0,0,0,0 },
+                                            {0,0,0,0,4,0,0,0,9 }
+                };
+            }
 
-            //}
-
+            //FillBoard();
+            //PrintBoard(false);
+            simplythebest = Int32.MaxValue;
             for (int i = 0; i < rand_re; i++)
             {
-
-                board = new int[,]
+                if (!overrideBoard)
                 {
-                                        {0,0,0,0,0,0,0,0,0 },
-                                        {0,0,0,0,0,3,0,8,5 },
-                                        {0,0,1,0,2,0,0,0,0 },
-                                        {0,0,0,5,0,7,0,0,0 },
-                                        {0,0,4,0,0,0,1,0,0 },
-                                        {0,9,0,0,0,0,0,0,0 },
-                                        {5,0,0,0,0,0,0,7,3 },
-                                        {0,0,2,0,1,0,0,0,0 },
-                                        {0,0,0,0,4,0,0,0,9 }
-                };
-                // Method for reading in sudoku's rather than using the standard one.
-                n = board.GetLength(0); // Width/length of board    
+                    originalboard = new int[,]
+                    {
+                                            {0,0,0,0,0,0,0,0,0 },
+                                            {0,0,0,0,0,3,0,8,5 },
+                                            {0,0,1,0,2,0,0,0,0 },
+                                            {0,0,0,5,0,7,0,0,0 },
+                                            {0,0,4,0,0,0,1,0,0 },
+                                            {0,9,0,0,0,0,0,0,0 },
+                                            {5,0,0,0,0,0,0,7,3 },
+                                            {0,0,2,0,1,0,0,0,0 },
+                                            {0,0,0,0,4,0,0,0,9 }
+                    };
+                }
+                else
+                {
+                        Initialize(0);
+                        originalboard = board;  
+                }
+                //PrintBoard(true);
+                n = originalboard.GetLength(0); // Width/length of board    
                 nSqrd = (int)Math.Sqrt(n); // Width/length of cube
                 boardExtra = new Number[n, n]; // The mutable and filled in version of sudoku.
+                board = originalboard;
+                // Method for reading in sudoku's rather than using the standard one.
+
 
                 //PrintBoard(true);
 
@@ -133,7 +162,7 @@ namespace Computationele_Intelligentie_Pi
                 //Console.WriteLine("Press any key to start HillClimbing..."); // not for test mode
 
                 // Get the best evaluation from all iterations of a run for testing purposes
-                simplythebest = Int32.MaxValue;
+                
                 HillClimb(x_climbs, no_improv_thres, x_randswaps);
                 if (FullEvaluation() < simplythebest)
                 {
@@ -289,7 +318,7 @@ namespace Computationele_Intelligentie_Pi
         {
             Number number1 = boardExtra[x1, y1];
             Number number2 = boardExtra[x2, y2];
-
+            //PrintBoard(false);
             //Console.WriteLine("number 1: ", x1, ",", y1, " number 2: ", x2, ",", y2);
             if (number1.anchored == false && number2.anchored == false) // If both numbers are not "Fixed", or they are the same location
             {
@@ -481,7 +510,7 @@ namespace Computationele_Intelligentie_Pi
         /// \Computationele Intelligentie Pi\Computationele Intelligentie Pi\bin\Debug\netcoreapp2.0
         /// Or somthing similair.
         /// </summary>        
-        public void Initialize()
+        public void Initialize(int sudokuNumber)
         {
             string textFile = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "sudoku_puzzels.txt"));
 
@@ -508,9 +537,10 @@ namespace Computationele_Intelligentie_Pi
                 } while (line != null);
                 seperators.Add(counter - 1); //Add last line for processing 
             }
+            LoadSudoku(sudokuNumber, seperators, textFile);
             // So now you've got a list of numbers containing the beginnings and ends of the sudoku's and the loaded textfile
 
-            AskInput(seperators, textFile);
+            //AskInput(seperators, textFile);
 
         }
 
@@ -563,9 +593,10 @@ namespace Computationele_Intelligentie_Pi
             {
                 for (int x = 0; x < size; x++)
                 {
-                    sudoku[x, y] = (charlist[x])[y];
+                    sudoku[x,y] = (charlist[x])[y];
                 }
             }
+            //Console.WriteLine(sudoku.Length);
             board = sudoku;
         }
 
